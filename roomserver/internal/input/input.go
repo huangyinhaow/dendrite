@@ -284,6 +284,9 @@ func (r *Inputer) queueInputRoomEvents(
 	ctx context.Context,
 	request *api.InputRoomEventsRequest,
 ) (replySub *nats.Subscription, err error) {
+	logrus.WithField("async", request.Asynchronous).Debugf("Queuing %d event(s) into roomserver", len(request.InputRoomEvents))
+	defer logrus.WithField("async", request.Asynchronous).Debugf("Successfully queued %d event(s) into roomserver", len(request.InputRoomEvents))
+
 	// If the request is synchronous then we need to create a
 	// temporary inbox to wait for responses on, and then create
 	// a subscription to it. If it's asynchronous then we won't
