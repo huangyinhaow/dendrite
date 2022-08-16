@@ -189,6 +189,14 @@ func (p *PDUStreamProvider) IncrementalSync(
 			return
 		}
 	} else {
+		if stateFilter.Limit > 100 {
+			// In the case that we're trying to catch up from a very long time
+			// ago, we don't really want to process *everything* all in one go,
+			// otherwise it takes too long and we time out and the client just
+			// keeps asking us endlessly. By limiting the state, we can move
+			// forward progressively in smaller chunks.
+			stateFilter.Limit = 100
+		}
 		if stateDeltas, joinedRooms, err = p.DB.GetStateDeltas(ctx, req.Device, r, req.Device.UserID, &stateFilter); err != nil {
 			req.Log.WithError(err).Error("p.DB.GetStateDeltas failed")
 			return
