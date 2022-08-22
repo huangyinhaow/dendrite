@@ -353,14 +353,18 @@ func (r *Inputer) processRoomEvent(
 		}
 	}
 
-	// We stop here if the event is rejected: We've stored it but won't update forward extremities or notify anyone about it.
-	if isRejected || softfail {
-		logger.WithError(rejectionErr).WithFields(logrus.Fields{
-			"room_id":      event.RoomID(),
-			"event_id":     event.EventID(),
-			"soft_fail":    softfail,
-			"missing_prev": missingPrev,
-		}).Warn("Stored rejected event")
+	// We stop here if the event is rejected: We've stored it but won't update
+	// forward extremities or notify downstream components about it.
+	switch {
+	case isRejected:
+		logger.WithError(rejectionErr).Warn("Stored rejected event")
+		if rejectionErr != nil {
+			return types.RejectedError(rejectionErr.Error())
+		}
+		return nil
+
+	case softfail:
+		logger.WithError(rejectionErr).Warn("Stored soft-failed event")
 		if rejectionErr != nil {
 			return types.RejectedError(rejectionErr.Error())
 		}
